@@ -1,0 +1,7 @@
+.venv/
+*.env
+__pycache__/
+.DS_Store
+.DS_Store?
+._*
+gunicorn_config.py

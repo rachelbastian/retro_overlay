@@ -1,0 +1,7 @@
+# gunicorn_config.py
+#IP/Hostname to bind your app to. 
+bind = "Your_IP:YourPort"
+#Number of Workers: 2-8 Recomended
+workers = 6
+#Session Failure Timeout
+timeout = 30

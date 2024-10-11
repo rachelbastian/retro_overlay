@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Achievements Game Overlay</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container" style="padding: 0; margin: 0; position: absolute; top: 0; left: 0;">
+        <div id="gameInfoWidget" class="card position-relative" style="width: 480px; margin: 0;">
+            <div class="card-body d-flex align-items-center">
+                <img id="gameIcon" src="" alt="Game Icon" class="img-thumbnail mr-3" style="max-width: 100px;">
+                <div>
+                    <h5 class="card-title">Most Recent Game: <span id="gameTitle">N/A</span></h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Your Progress: <span id="userProgress">N/A</span>%</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">Total Achievements: <span id="totalAchievements">N/A</span> (<span id="userAwardedAchievements">N/A</span> / <span id="numAchievements">N/A</span>)</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            const username = '{{ username }}';
+            if (username) {
+                fetchUserAchievements(username);
+                // Refresh data every 30 seconds
+                setInterval(function() {
+                    fetchUserAchievements(username);
+                }, 30000);
+            }
+        });
+
+        function fetchUserAchievements(username) {
+            $.ajax({
+                url: '/api/user-summary',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ username: username }),
+                success: function(data) {
+                    if (data.LastGameID) {
+                        fetchGameInfo(username, data.LastGameID);
+                    } else {
+                        $('#gameInfoWidget').hide();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Error fetching user data. Please make sure the username is correct and try again.');
+                }
+            });
+        }
+
+        function fetchGameInfo(username, gameId) {
+            $.ajax({
+                url: '/api/game-info',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ username: username, gameId: gameId }),
+                success: function(data) {
+                    $('#gameTitle').text(data.Title);
+                    if (data.ImageIcon) {
+                        const baseUrl = 'https://media.retroachievements.org';
+                        $('#gameIcon').attr('src', `${baseUrl}${data.ImageIcon}`);
+                    }
+                    const numAwardedToUserHardcore = parseInt(data.NumAwardedToUserHardcore, 10);
+                    const numAchievements = parseInt(data.NumAchievements, 10);
+
+                    if (!isNaN(numAchievements) && numAchievements > 0) {
+                        const progressPercentage = !isNaN(numAwardedToUserHardcore) && numAwardedToUserHardcore > 0 ? (numAwardedToUserHardcore / numAchievements) * 100 : 0;
+                        $('#userProgress').text(progressPercentage.toFixed(2));
+                        $('#totalAchievements').text(numAchievements);
+                        $('#userAwardedAchievements').text(numAwardedToUserHardcore);
+                        $('#numAchievements').text(numAchievements);
+                    } else {
+                        $('#userProgress').text('N/A');
+                        $('#totalAchievements').text('N/A');
+                        $('#userAwardedAchievements').text('N/A');
+                    }
+
+                    $('#gameInfoWidget').show();
+                },
+                error: function(xhr, status, error) {
+                    alert('Error fetching game info. Please try again.');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

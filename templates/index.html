@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Achievements Widget</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5" style="padding-left: 15px; padding-right: 15px;">
+        <div class="card" style="padding: 20px;">
+            <div class="card-header bg-primary text-white mb-3">
+                Retro Achievements Overlay
+            </div>
+            <p>This app allows you to view the most recent game and achievement for a user on Retro Achievements. It can also be used as an overlay in Twitch.</p>
+            <form id="userForm" class="mt-4 mx-auto" style="max-width: 100%; width: 100%; max-width: 900px;">
+                <div class="input-group mb-3" style="width: 100%; max-width: 900px;">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="username-label">Username</span>
+                    </div>
+                    <input type="text" id="username" class="form-control" placeholder="Enter your Retro Achievements username" aria-label="Username" aria-describedby="username-label">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-primary">Get Info</button>
+                    </div>
+                </div>
+            </form>
+            <hr>
+            <div id="gameInfoWidget" class="mt-4 card position-relative" style="display: none;">
+                <div class="card-body d-flex align-items-center">
+                    <img id="gameIcon" src="" alt="Game Icon" class="img-thumbnail mr-3" style="max-width: 100px;">
+                    <div>
+                        <h5 class="card-title">Most Recent Game: <span id="gameTitle">N/A</span></h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Your Progress: <span id="userProgress">N/A</span>%</h6>
+                        <h6 class="card-subtitle mb-2 text-muted">Total Achievements: <span id="totalAchievements">N/A</span> (<span id="userAwardedAchievements">N/A</span> / <span id="numAchievements">N/A</span>)</h6>
+                    </div>
+                    <button id="openOverlay" class="btn btn-secondary" style="position: absolute; bottom: 15px; right: 15px;" onclick="openOverlayTab()">Open Overlay</button>
+                </div>
+            </div>
+            <div id="recentAchievementWidget" class="mt-4 card position-relative" style="display: none;">
+                <div class="card-body d-flex align-items-center">
+                    <img id="achievementGameIcon" src="" alt="Achievement Game Icon" class="img-thumbnail mr-3" style="max-width: 100px;">
+                    <div>
+                        <h5 class="card-title">Most Recent Achievement: <span id="achievementTitle">N/A</span></h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Game: <span id="achievementGameTitle">N/A</span></h6>
+                        <h6 class="card-subtitle mb-2 text-muted">Unlocked on: <span id="achievementDate">N/A</span></h6>
+                    </div>
+                    <button id="openOverlay" class="btn btn-secondary" style="position: absolute; bottom: 15px; right: 15px;" onclick="openAchievementOverlayTab()">Open Overlay</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#gameInfoWidget').hide();
+            $('#recentAchievementWidget').hide();
+
+            $('#userForm').submit(function(event) {
+                event.preventDefault();
+                const username = $('#username').val();
+                if (username) {
+                    fetchUserAchievements(username);
+                    fetchUserRecentAchievement(username);
+                }
+            });
+        });
+
+        function fetchUserAchievements(username) {
+            $.ajax({
+                url: '/api/user-summary',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ username: username }),
+                success: function(data) {
+                    if (data.LastGameID) {
+                        fetchGameInfo(username, data.LastGameID);
+                    } else {
+                        $('#gameInfoWidget').hide();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Error fetching user data. Please make sure the username is correct and try again.');
+                }
+            });
+        }
+
+        function fetchUserRecentAchievement(username) {
+            $.ajax({
+                url: '/api/recent-achievement',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ username: username }),
+                success: function(data) {
+                    if (data && data.length > 0) {
+                        const recentAchievement = data[0];
+                        $('#achievementTitle').text(recentAchievement.Title);
+                        if (recentAchievement.GameIcon) {
+                            const baseUrl = 'https://media.retroachievements.org';
+                            $('#achievementGameIcon').attr('src', `${baseUrl}${recentAchievement.GameIcon}`);
+                        }
+                        $('#achievementGameTitle').text(recentAchievement.GameTitle);
+                        $('#achievementDate').text(recentAchievement.Date);
+                        $('#recentAchievementWidget').show();
+                    } else {
+                        $('#achievementTitle').text('No recent achievements');
+                        $('#recentAchievementWidget').hide();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Error fetching recent achievement. Please try again.');
+                }
+            });
+        }
+
+        function fetchGameInfo(username, gameId) {
+    $.ajax({
+        url: '/api/game-info',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ username: username, gameId: gameId }),
+        success: function(data) {
+            // Safely parse and handle the values
+            
+            const numAchieved = parseInt(data.NumAwardedToUserHardcore, 10) || 0;
+            const numAchievements = parseInt(data.NumAchievements, 10) || 0;
+
+            
+
+            $('#gameTitle').text(data.Title);
+            if (data.ImageIcon) {
+                const baseUrl = 'https://media.retroachievements.org';
+                $('#gameIcon').attr('src', `${baseUrl}${data.ImageIcon}`);
+            }
+
+            if (numAchievements > 0) {
+                let progressPercentage;
+                if (numAchieved >= numAchievements) {
+                    progressPercentage = 100;
+                } else {
+                    progressPercentage = (numAchieved / numAchievements) * 100;
+                }
+                $('#userProgress').text(progressPercentage.toFixed(2));
+                $('#totalAchievements').text(numAchievements);
+                $('#userAwardedAchievements').text(data.NumAwardedToUserHardcore);
+                $('#numAchievements').text(numAchievements);
+            } else {
+                $('#userProgress').text('N/A');
+                $('#totalAchievements').text('N/A');
+            }
+
+            $('#gameInfoWidget').show();
+        },
+        error: function(xhr, status, error) {
+            alert('Error fetching game info. Please try again.');
+        }
+    });
+}
+
+        function openOverlayTab() {
+            const username = $('#username').val();
+            if (username) {
+                const overlayUrl = `/recent-game-overlay/${encodeURIComponent(username)}`;
+                window.open(overlayUrl, '_blank');
+            }
+        }
+
+        function openAchievementOverlayTab() {
+            const username = $('#username').val();
+            if (username) {
+                const overlayUrl = `/recent-achievement-overlay/${encodeURIComponent(username)}`;
+                window.open(overlayUrl, '_blank');
+            }
+        }
+    </script>
+</body>
+</html>

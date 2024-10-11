@@ -4,7 +4,7 @@ This app is designed to fetch data from the RetroAchievements API every 30 secon
 
 ![Screenshot 1](/screenshots/mainpage10-11.png?raw=true "Screenshot")
 
-You can try out the live version at https://RetroCheevo.org or run the project locally by following the steps below.
+You can try out the live version at https://retrocheevo.org or run the project locally by following the steps below.
 
 
 To run this project locally, follow the steps below:

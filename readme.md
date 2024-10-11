@@ -2,6 +2,8 @@ Retro Overlay
 
 This app is designed to fetch data from the RetroAchievements API every 30 seconds, displaying recent achievement progress and recently played games for a specified user. It also includes an "Open Overlay" feature that opens a new tab, which can be integrated with OBS as an overlay for Twitch streams. The overlay updates in real-time every 30 seconds and uses a static, username-encoded URL for consistent display.
 
+![Screenshot 1](/screenshots/mainpage10-11.png?raw=true "Screenshot")
+
 You can try out the live version at RetroCheevo.org or run the project locally by following the steps below.
 
 
